@@ -96,5 +96,5 @@ def create_benchmark_datasets(output_dir: str = "data"):
     test_hard.save(os.path.join(output_dir, "test_hard.pkl"))
 
 
-if __name__ == "__main__":
-    create_benchmark_datasets()
+# if __name__ == "__main__":
+# create_benchmark_datasets()
