@@ -1,3 +1,3 @@
-from data_holder import Data
-from enviroment import Env
-from verifier import Verifier
+from base_classes.data_holder import Data
+from base_classes.enviroment import Env
+from base_classes.verifier import Verifier
