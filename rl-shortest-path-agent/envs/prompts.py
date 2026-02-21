@@ -47,3 +47,18 @@ def generate_shortest_path_prompt(adjacency_matrix: np.ndarray, start_node: int,
     )
 
     return prompt
+
+
+SYSTEM_PROMPT = """
+You are a pathfinding expert. Find the shortest path between the given start and end nodes.
+First, explore the graph step-by-step and calculate path costs inside <reasoning> tags.
+Then, output ONLY the final sequence of node indices, comma-separated, inside <answer> tags.
+
+Respond in the following format:
+<reasoning>
+...
+</reasoning>
+<answer>
+...
+</answer>
+"""
