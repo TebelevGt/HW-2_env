@@ -21,4 +21,5 @@ training_args = GRPOConfig(
     max_grad_norm=0.1,
     report_to="none",  # Can use Weights & Biases
     output_dir="outputs",
+    generation_batch_size=8,  # Decrease if out of memory
 )
