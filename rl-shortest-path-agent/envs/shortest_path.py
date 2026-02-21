@@ -97,3 +97,41 @@ class PathEnv(Env):
                     break  # Граф успешно сгенерирован, идем к следующему вопросу
 
         return data_list
+
+    def visualize(self, data: Data, save_path: Optional[str] = None):
+        """
+        Визуализирует граф задачи.
+        :param data: объект Data с метаданными графа
+        :param save_path: путь для сохранения изображения (опционально)
+        """
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            print("Для визуализации требуется библиотека matplotlib (pip install matplotlib).")
+            return
+
+        # Восстанавливаем граф из матрицы смежности
+        G = nx.from_numpy_array(data.metadata["matrix"])
+        start = data.metadata["start"]
+        end = data.metadata["end"]
+
+        pos = nx.spring_layout(G, seed=42)  # seed для стабильного отображения
+
+        plt.figure(figsize=(8, 6))
+
+        # Рисуем узлы, ребра и метки
+        nx.draw_networkx_nodes(G, pos, node_color="lightblue", node_size=500)
+        nx.draw_networkx_nodes(G, pos, nodelist=[start], node_color="green", label="Start")
+        nx.draw_networkx_nodes(G, pos, nodelist=[end], node_color="red", label="End")
+        nx.draw_networkx_edges(G, pos)
+        nx.draw_networkx_labels(G, pos)
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=nx.get_edge_attributes(G, "weight"))
+
+        plt.legend()
+        plt.title(f"Shortest Path Task: {start} -> {end}")
+
+        if save_path:
+            plt.savefig(save_path)
+        else:
+            plt.show()
+        plt.close()
