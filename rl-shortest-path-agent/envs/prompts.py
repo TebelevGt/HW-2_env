@@ -15,37 +15,25 @@ def generate_shortest_path_prompt(adjacency_matrix: np.ndarray, start_node: int,
     """
     n_nodes = adjacency_matrix.shape[0]
 
-    # Convert matrix to Adjacency List format to save tokens
+    # Compact Adjacency List format: "0: 1(5) 2(3)" to save tokens
     edge_lines = []
     for i in range(n_nodes):
         neighbors = []
         for j in range(n_nodes):
-            if adjacency_matrix[i, j] > 0:
-                neighbors.append(f"Node {j} (weight {adjacency_matrix[i, j]})")
+            weight = adjacency_matrix[i, j]
+            if weight > 0:
+                neighbors.append(f"{j}({weight})")
         if neighbors:
-            edge_lines.append(f"Node {i}: " + ", ".join(neighbors))
+            edge_lines.append(f"{i}: " + " ".join(neighbors))
         else:
-            edge_lines.append(f"Node {i}: No connections")
+            edge_lines.append(f"{i}: -")
 
     graph_str = "\n".join(edge_lines)
 
     return (
-        "You are an expert in graph algorithms. Your task is to find the shortest path in a weighted undirected graph.\n\n"
-        "### Rules and Definitions\n"
-        "1. **Graph Representation**:\n"
-        f"   - The graph consists of {n_nodes} nodes, numbered from 0 to {n_nodes - 1}.\n"
-        "   - The graph is provided as an adjacency list.\n"
-        "   - For each node, its neighbors and the edge weights are listed.\n"
-        "   - The graph is undirected (if A is connected to B, B is connected to A with the same weight).\n"
-        "2. **Objective**:\n"
-        f"   - Find the path from **Node {start_node}** to **Node {end_node}** with the minimum total weight.\n"
-        "   - The total weight is the sum of the weights of the edges in the path.\n"
-        "3. **Output Format**:\n"
-        "   - Provide your final answer strictly as a comma-separated list of node indices.\n"
-        "   - The list must be enclosed within `<answer>` and `</answer>` tags.\n"
-        "   - Example: <answer>0, 2, 5, 3</answer>\n\n"
-        "### Problem Instance\n"
-        f"Start Node: {start_node}\n"
-        f"End Node: {end_node}\n"
-        f"Graph Description:\n{graph_str}\n"
+        f"Find the shortest path from Node {start_node} to Node {end_node} in the weighted undirected graph below.\n"
+        "The graph is represented as an adjacency list where 'i: j(w)' means there is an edge between node i and node j with weight w.\n\n"
+        f"Graph:\n{graph_str}\n\n"
+        "Output the sequence of node indices for the shortest path, comma-separated, inside <answer> tags.\n"
+        "Example: <answer>0, 2, 5, 3</answer>"
     )
