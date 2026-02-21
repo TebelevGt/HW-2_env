@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from .verifier import Verifier
 from .data_holder import Data
-from typing
+from typing import Optional
+
 
 class Env(ABC):
     """
