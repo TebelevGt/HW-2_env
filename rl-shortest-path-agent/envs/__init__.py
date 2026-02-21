@@ -12,3 +12,5 @@ from .reward_functions import (
     soft_format_reward_func,
     xmlcount_reward_func,
 )
+
+from .configs import training_args
