@@ -6,8 +6,6 @@ import torch
 from torch.utils.data import Dataset
 from typing import List, Optional
 
-# Импортируем Data и PathEnv.
-# Предполагается, что base_classes.py и shortest_path.py находятся в доступном пути (в той же папке).
 from base_classes import Data
 from shortest_path import PathEnv
 
