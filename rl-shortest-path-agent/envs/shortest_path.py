@@ -50,7 +50,7 @@ class PathEnv(Env):
 
     def generate(
         self, num_of_questions: int = 100, max_attempts: int = 100, difficulty: Optional[int] = 1
-    ) -> List[DataHolder]:
+    ) -> List[Data]:
         data_list = []
         # Сложность (1-10) влияет на количество вершин: diff 1 -> 5 вершин, diff 10 -> 23 вершины
         n_nodes = (difficulty or 1) * 2 + 3
