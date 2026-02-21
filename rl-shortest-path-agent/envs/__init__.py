@@ -1,2 +1,2 @@
 from envs.shortest_path import PathEnv, PathVerifier
-from dataset import ShortestPathDataset
+from .dataset import ShortestPathDataset
