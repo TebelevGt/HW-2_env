@@ -67,7 +67,7 @@ class PathEnv(Env):
 
         # Если n_nodes не задан явно, вычисляем его на основе difficulty
         if n_nodes is None:
-            n_nodes = (difficulty or 1) * 2 + 3
+            n_nodes = int((difficulty or 1) * 1.5 + 3)
 
         for _ in range(num_of_questions):
             for _ in range(max_attempts):
