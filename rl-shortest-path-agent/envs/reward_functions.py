@@ -6,7 +6,14 @@ import numpy as np
 def extract_xml_answer(text: str) -> str:
     """Извлекает содержимое тега <answer>"""
     match = re.search(r"<answer>(.*?)</answer>", text, re.DOTALL)
-    return match.group(1).strip() if match else ""
+    if match:
+        return match.group(1).strip()
+    # Fallback: если тегов нет, ищем паттерн "число, число, ..."
+    if text:
+        candidates = re.findall(r"\d+(?:\s*,\s*\d+)+", text)
+        if candidates:
+            return candidates[-1]
+    return ""
 
 
 def correctness_reward_func(
@@ -28,11 +35,16 @@ def correctness_reward_func(
 
         try:
             # Парсим "1, 2, 3" -> [1, 2, 3]
-            pred_path = [int(x.strip()) for x in pred_str.split(",")]
+            # Очистка от скобок и лишних символов
+            clean_str = re.sub(r"[^\d,]", "", pred_str)
+            pred_path = [int(x.strip()) for x in clean_str.split(",") if x.strip()]
 
             if not pred_path:
                 rewards.append(0.0)
                 continue
+
+            # 0. Награда за формат (модель выдала список чисел)
+            reward += 0.1
 
             graph = nx.from_numpy_array(np.array(matrix[i]))
             actual_start, actual_end, target_cost = start[i], end[i], optimal_cost[i]
@@ -55,7 +67,7 @@ def correctness_reward_func(
                         actual_cost += graph[u][v]["weight"]
 
                 transition_ratio = valid_transitions / (len(pred_path) - 1)
-                reward += 0.4 * transition_ratio
+                reward += 0.5 * transition_ratio
 
                 # 3. Маршрут корректно соединяет старт и финиш (+0.4)
                 is_complete_valid_path = (
@@ -65,16 +77,16 @@ def correctness_reward_func(
                 )
 
                 if is_complete_valid_path:
-                    reward += 0.4
+                    reward += 0.5
 
                     # 4. Награда за оптимальность стоимости (до +0.8)
                     if actual_cost == target_cost:
-                        reward += 0.8  # Идеальный путь!
+                        reward += 1.0  # Идеальный путь!
                     elif actual_cost > 0:
                         # Если путь длиннее нужного, даем частичный балл.
                         # Например, таргет 10, модель нашла путь за 15: 0.8 * (10/15) = +0.53
                         cost_ratio = target_cost / actual_cost
-                        reward += 0.8 * min(1.0, cost_ratio)
+                        reward += 1.0 * min(1.0, cost_ratio)
 
         except Exception:
             pass  # Не смогли распарсить или ошибка графа — оставляем текущий reward
