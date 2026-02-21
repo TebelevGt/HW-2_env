@@ -3,6 +3,7 @@ import random
 import networkx as nx
 from typing import Optional, List
 from base_classes import Data, Env, Verifier
+from prompts import generate_shortest_path_prompt
 
 
 class PathVerifier(Verifier):
@@ -84,13 +85,7 @@ class PathEnv(Env):
 
                     # Формируем матрицу и промпт
                     mat = nx.to_numpy_array(G, nonedge=0).astype(int)
-                    prompt = (
-                        f"You are given a weighted undirected graph represented by an adjacency matrix.\n"
-                        f"Nodes are numbered from 0 to {n_nodes - 1}. A value of 0 means no direct edge.\n"
-                        f"Matrix:\n{mat}\n\n"
-                        f"Find the shortest path from node {start} to node {end}.\n"
-                        f"Provide your final answer as a comma-separated list of node indices inside the <answer> tags."
-                    )
+                    prompt = generate_shortest_path_prompt(mat, start, end)
 
                     # Эталонный ответ (просто для логов/сравнения)
                     ans_str = ", ".join(map(str, optimal_path))
