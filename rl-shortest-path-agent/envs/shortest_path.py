@@ -49,22 +49,31 @@ class PathEnv(Env):
         return self.verifier.extract_answer(test_solution)
 
     def generate(
-        self, num_of_questions: int = 100, max_attempts: int = 100, difficulty: Optional[int] = 1
+        self,
+        num_of_questions: int = 100,
+        max_attempts: int = 100,
+        difficulty: Optional[int] = 1,
+        n_nodes: Optional[int] = None,
+        edge_prob: float = 0.4,
+        min_weight: int = 1,
+        max_weight: int = 10,
     ) -> List[Data]:
         data_list = []
-        # Сложность (1-10) влияет на количество вершин: diff 1 -> 5 вершин, diff 10 -> 23 вершины
-        n_nodes = (difficulty or 1) * 2 + 3
+
+        # Если n_nodes не задан явно, вычисляем его на основе difficulty
+        if n_nodes is None:
+            n_nodes = (difficulty or 1) * 2 + 3
 
         for _ in range(num_of_questions):
             for _ in range(max_attempts):
-                # Генерируем случайный граф (p=0.4 - плотность связей)
-                G = nx.fast_gnp_random_graph(n_nodes, p=0.4)
+                # Генерируем случайный граф
+                G = nx.fast_gnp_random_graph(n_nodes, p=edge_prob)
 
                 # Нам нужен только связный граф, чтобы путь гарантированно существовал
                 if nx.is_connected(G):
-                    # Навешиваем случайные веса от 1 до 10 на ребра
+                    # Навешиваем случайные веса на ребра
                     for u, v in G.edges():
-                        G.edges[u, v]["weight"] = random.randint(1, 10)
+                        G.edges[u, v]["weight"] = random.randint(min_weight, max_weight)
 
                     # Выбираем случайные старт и конец
                     start, end = random.sample(list(G.nodes()), 2)
