@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 from typing import List, Optional
 
 from envs.base_classes import Data
-from envs.shortest_path import PathEnv
+from .shortest_path import PathEnv
 
 
 class ShortestPathDataset(Dataset):
