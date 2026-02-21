@@ -2,7 +2,7 @@ import re
 import random
 import networkx as nx
 from typing import Optional, List
-from base_classes import Env, Verifier
+from base_classes import Data, Env, Verifier
 
 
 class PathVerifier(Verifier):
@@ -11,7 +11,7 @@ class PathVerifier(Verifier):
         match = re.search(r"<answer>(.*?)</answer>", test_solution, re.DOTALL)
         return match.group(1).strip() if match else ""
 
-    def verify(self, data: DataHolder, test_solution: str) -> bool:
+    def verify(self, data: Data, test_solution: str) -> bool:
         """Проверяем, что путь существует и его стоимость равна минимальной"""
         pred_str = self.extract_answer(test_solution)
         if not pred_str:
