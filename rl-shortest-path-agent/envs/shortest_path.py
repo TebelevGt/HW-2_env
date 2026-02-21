@@ -3,7 +3,7 @@ import random
 import networkx as nx
 from typing import Optional, List
 from envs.base_classes import Data, Env, Verifier
-from envs.prompts import generate_shortest_path_prompt
+from .prompts import generate_shortest_path_prompt
 
 
 class PathVerifier(Verifier):
