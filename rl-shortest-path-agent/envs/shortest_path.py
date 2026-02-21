@@ -213,7 +213,7 @@ def create_benchmark_datasets(output_dir: str = "data"):
 
     # 1. Train Dataset (Разнообразный, посложнее)
     # Генерируем 5000 задач с ~15 узлами
-    train_ds = ShortestPathDataset.create(env, num_samples=5000, n_nodes=15, edge_prob=0.3)
+    train_ds = ShortestPathDataset.create(env, num_samples=5000, n_nodes=12, edge_prob=0.3)
     train_ds.save(os.path.join(output_dir, "train_v1.pkl"))
 
     # 2. Test Datasets (Разной сложности для оценки)
