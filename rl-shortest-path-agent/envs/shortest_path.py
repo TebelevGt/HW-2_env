@@ -2,7 +2,7 @@ import re
 import random
 import networkx as nx
 from typing import Optional, List
-from base_classes import DataHolder, Env, Verifier
+from base_classes import Env, Verifier
 
 
 class PathVerifier(Verifier):
