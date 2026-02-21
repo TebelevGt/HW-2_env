@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import Dataset
 from typing import List, Optional
 
-from base_classes import Data
+from envs.base_classes import Data
 from envs.shortest_path import PathEnv
 
 
