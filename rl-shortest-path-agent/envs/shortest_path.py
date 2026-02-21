@@ -87,7 +87,7 @@ class PathEnv(Env):
                     ans_str = ", ".join(map(str, optimal_path))
 
                     data_list.append(
-                        DataHolder(
+                        Data(
                             question=prompt,
                             answer=ans_str,
                             difficulty=difficulty,
