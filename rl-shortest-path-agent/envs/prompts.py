@@ -19,7 +19,7 @@ def generate_shortest_path_prompt(adjacency_matrix: np.ndarray, start_node: int,
     # threshold=np.inf ensures the full matrix is printed even if it's large.
     matrix_str = np.array2string(adjacency_matrix, separator=", ", threshold=np.inf)
 
-    prompt = (
+    return (
         "You are an expert in graph algorithms. Your task is to find the shortest path in a weighted undirected graph.\n\n"
         "### Rules and Definitions\n"
         "1. **Graph Representation**:\n"
@@ -40,4 +40,3 @@ def generate_shortest_path_prompt(adjacency_matrix: np.ndarray, start_node: int,
         f"End Node: {end_node}\n"
         f"Adjacency Matrix:\n{matrix_str}\n"
     )
-    return prompt
