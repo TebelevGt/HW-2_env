@@ -5,7 +5,7 @@ import numpy as np
 import networkx as nx
 from typing import Optional, List
 from envs.base_classes import Data, Env, Verifier
-from envs.prompts import generate_shortest_path_prompt
+from envs.prompts import generate_shortest_path_prompt, SYSTEM_PROMPT
 import pickle
 from torch.utils.data import Dataset
 
@@ -229,3 +229,32 @@ def create_benchmark_datasets(output_dir: str = "data"):
     # Hard: Большие графы (difficulty=10 -> ~23 узла)
     test_hard = ShortestPathDataset.create(env, num_samples=200, difficulty=10)
     test_hard.save(os.path.join(output_dir, "test_hard.pkl"))
+
+
+def get_shortest_path_dataset(filepath: str):
+    """Загружает сохраненный ShortestPathDataset и конвертирует его для GRPOTrainer"""
+    import datasets
+
+    custom_dataset = ShortestPathDataset.load(filepath)
+
+    data_dict = {
+        "prompt": [],
+        "answer": [],
+        "matrix": [],
+        "start": [],
+        "end": [],
+        "optimal_cost": [],
+    }
+
+    for item in custom_dataset.data:
+        chat_prompt = [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": item.question}]
+        data_dict["prompt"].append(chat_prompt)
+        data_dict["answer"].append(item.answer)
+
+        # Сохраняем метаданные для correctness_reward_func
+        data_dict["matrix"].append(item.metadata["matrix"].tolist())
+        data_dict["start"].append(item.metadata["start"])
+        data_dict["end"].append(item.metadata["end"])
+        data_dict["optimal_cost"].append(item.metadata["optimal_cost"])
+
+    return datasets.Dataset.from_dict(data_dict)
