@@ -44,22 +44,22 @@ def correctness_reward_func(
                 continue
 
             # 0. Награда за формат (модель выдала список чисел)
-            reward += 0.1
+            reward += 0.05
 
             graph = nx.from_numpy_array(np.array(matrix[i]))
             actual_start, actual_end, target_cost = start[i], end[i], optimal_cost[i]
 
-            # 1. Утешительные баллы за правильный старт и финиш (до +0.4)
+            # 1. Утешительные баллы за правильный старт и финиш
             if pred_path[0] == actual_start:
-                reward += 0.2
+                reward += 0.05
             if pred_path[-1] == actual_end:
-                reward += 0.2
+                reward += 0.05
 
             valid_transitions = 0
             actual_cost = 0
 
             if len(pred_path) > 1:
-                # 2. Балл за движение по реальным ребрам графа (до +0.4)
+                # 2. Балл за движение по реальным ребрам графа
                 for j in range(len(pred_path) - 1):
                     u, v = pred_path[j], pred_path[j + 1]
                     if graph.has_edge(u, v):
@@ -67,9 +67,9 @@ def correctness_reward_func(
                         actual_cost += graph[u][v]["weight"]
 
                 transition_ratio = valid_transitions / (len(pred_path) - 1)
-                reward += 0.5 * transition_ratio
+                reward += 0.1 * transition_ratio
 
-                # 3. Маршрут корректно соединяет старт и финиш (+0.4)
+                # 3. Маршрут корректно соединяет старт и финиш
                 is_complete_valid_path = (
                     pred_path[0] == actual_start
                     and pred_path[-1] == actual_end
@@ -77,14 +77,13 @@ def correctness_reward_func(
                 )
 
                 if is_complete_valid_path:
-                    reward += 0.5
+                    reward += 1.0
 
-                    # 4. Награда за оптимальность стоимости (до +0.8)
+                    # 4. Награда за оптимальность стоимости
                     if actual_cost == target_cost:
-                        reward += 1.0  # Идеальный путь!
+                        reward += 2.0  # Идеальный путь!
                     elif actual_cost > 0:
                         # Если путь длиннее нужного, даем частичный балл.
-                        # Например, таргет 10, модель нашла путь за 15: 0.8 * (10/15) = +0.53
                         cost_ratio = target_cost / actual_cost
                         reward += 1.0 * min(1.0, cost_ratio)
 
