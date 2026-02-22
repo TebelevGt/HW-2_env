@@ -32,6 +32,9 @@ def correctness_reward_func(
 
             if not pred_path:
                 rewards.append(0.0)
+                print(
+                    f"\n[Train] Start: {actual_start} | End: {actual_end} | Ideal: {answer[i]} (Cost: {target_cost}) | Agent: Empty/Parse Error | Reward: 0.0"
+                )
                 continue
 
             # 1. Базовый формат
@@ -40,6 +43,9 @@ def correctness_reward_func(
             # 2. Старт должен быть верным (обязательно)
             if pred_path[0] != actual_start:
                 rewards.append(0.0)  # Если старт не тот, дальше не смотрим
+                print(
+                    f"\n[Train] Start: {actual_start} | End: {actual_end} | Ideal: {answer[i]} (Cost: {target_cost}) | Agent: {pred_path} | Status: Wrong Start | Reward: 0.0"
+                )
                 continue
             reward += 0.2
 
@@ -77,17 +83,20 @@ def correctness_reward_func(
             if len(pred_path) != len(set(pred_path)):
                 reward *= 0.5
 
-        except Exception:
+        except Exception as e:
             reward = 0.0
+            print(f"[Train] Exception: {e}")
 
         rewards.append(max(0.0, reward))
 
-    # Печать для отладки
-    if extracted_responses and len(answer) > 0:
-        pass
-        # print(
-        #     f"Target: {answer[0]} | Start: {start[0]} | End: {end[0]} | Response: {extracted_responses[0]} | Reward: {rewards[0]:.3f}"
-        # )
+        # Логирование полного прохода
+        if "pred_path" in locals() and pred_path and len(pred_path) > 0 and pred_path[0] == actual_start:
+            print(f"\n[Train] Start: {actual_start} | End: {actual_end}")
+            print(f"  Ideal Path: {answer[i]} (Cost: {target_cost})")
+            print(f"  Agent Path: {pred_path}")
+            print(f"  Agent Cost: {current_cost if not is_broken else str(current_cost) + ' (Broken)'}")
+            print(f"  Exists in Graph: {not is_broken} | Reached End: {pred_path[-1] == actual_end}")
+            print(f"  Reward: {reward:.4f}")
 
     return rewards
 
