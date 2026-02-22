@@ -89,8 +89,8 @@ def correctness_reward_func(
         rewards.append(max(0.0, reward))
 
     # Печать для отладки
-    if extracted_responses:
-        print(f"Path: {extracted_responses[0]} | EndNode: {actual_end} | Reward: {rewards[0]:.3f}")
+    if extracted_responses and len(answer) > 0:
+        print(f"Target: {answer[0]} | Response: {extracted_responses[0]} | Reward: {rewards[0]:.3f}")
 
     return rewards
 
