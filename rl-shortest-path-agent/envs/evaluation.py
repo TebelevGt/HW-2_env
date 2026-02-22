@@ -13,7 +13,7 @@ def extract_xml_tag(text: str, tag: str) -> str:
     return match.group(1).strip() if match else ""
 
 
-def evaluate_agent_new(model, tokenizer, dataset, device="cuda", batch_size=8, generate_kwargs=None):
+def evaluate_agent(model, tokenizer, dataset, device="cuda", batch_size=8, generate_kwargs=None):
     if isinstance(dataset, str):
         dataset = ShortestPathDataset.load(dataset)
 
