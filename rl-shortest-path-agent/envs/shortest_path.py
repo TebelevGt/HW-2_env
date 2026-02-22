@@ -3,7 +3,7 @@ import os
 import random
 import numpy as np
 import networkx as nx
-from typing import Optional, List
+from typing import Optional, List, Union, Tuple, Dict, Any
 from envs.base_classes import Data, Env, Verifier
 from envs.prompts import generate_path_prompt, SYSTEM_PROMPT
 import pickle
@@ -54,7 +54,7 @@ class PathEnv(Env):
         self,
         num_of_questions: int = 100,
         max_attempts: int = 100,
-        difficulty: Optional[int] = 1,
+        difficulty: Union[int, Tuple[int, int], None] = 1,
         n_nodes: Optional[int] = None,
         edge_prob: float = 0.4,
         min_weight: int = 1,
@@ -62,14 +62,24 @@ class PathEnv(Env):
     ) -> List[Data]:
         data_list = []
 
-        # Если n_nodes не задан явно, вычисляем его на основе difficulty
-        if n_nodes is None:
-            n_nodes = int((difficulty or 1) * 1.5 + 3)
+        fixed_n_nodes = n_nodes
 
         for _ in range(num_of_questions):
+            # Определяем сложность для текущего примера
+            if isinstance(difficulty, (tuple, list)):
+                curr_diff = random.randint(difficulty[0], difficulty[1])
+            else:
+                curr_diff = difficulty or 1
+
+            # Вычисляем количество узлов
+            if fixed_n_nodes is not None:
+                current_n_nodes = fixed_n_nodes
+            else:
+                current_n_nodes = int(curr_diff * 1.5 + 3)
+
             for _ in range(max_attempts):
                 # Генерируем случайный граф
-                G = nx.fast_gnp_random_graph(n_nodes, p=edge_prob)
+                G = nx.fast_gnp_random_graph(current_n_nodes, p=edge_prob)
 
                 # Нам нужен только связный граф, чтобы путь гарантированно существовал
                 if nx.is_connected(G):
@@ -95,7 +105,7 @@ class PathEnv(Env):
                         Data(
                             question=prompt,
                             answer=ans_str,
-                            difficulty=difficulty,
+                            difficulty=curr_diff,
                             metadata={"matrix": mat, "start": start, "end": end, "optimal_cost": optimal_cost},
                         )
                     )
@@ -186,6 +196,23 @@ class ShortestPathDataset(Dataset):
         print(f"Generating {num_samples} samples with params: {kwargs}...")
         raw_data = env.generate(num_of_questions=num_samples, **kwargs)
         return cls(raw_data)
+
+    @classmethod
+    def create_curriculum(
+        cls, env: PathEnv, total_samples: int, stages: List[Dict[str, Any]]
+    ) -> "ShortestPathDataset":
+        """
+        Создает датасет с этапами сложности.
+        stages: [{'difficulty': 1, 'ratio': 0.5}, {'difficulty': 5, 'ratio': 0.5}]
+        """
+        data = []
+        for stage in stages:
+            stage_params = stage.copy()
+            ratio = stage_params.pop("ratio", 1.0 / len(stages))
+            num_stage = int(total_samples * ratio)
+            print(f"Generating curriculum stage: {num_stage} samples with {stage_params}...")
+            data.extend(env.generate(num_of_questions=num_stage, **stage_params))
+        return cls(data)
 
 
 def collate_data_fn(batch: List[Data]) -> List[Data]:
