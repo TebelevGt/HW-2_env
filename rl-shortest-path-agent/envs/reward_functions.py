@@ -71,6 +71,7 @@ def correctness_reward_func(
             # 5. Бонус за успешный финиш
             if not is_broken and pred_path[-1] == actual_end:
                 reward += 3.5  # Мы дошли! (Награда за выполнение задачи)
+                print(f"SUCCESS: Found valid path: {pred_path}")
 
             # Штраф за циклы, чтобы не накручивали прогресс
             if len(pred_path) != len(set(pred_path)):
