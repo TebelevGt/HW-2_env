@@ -70,14 +70,7 @@ def correctness_reward_func(
 
             # 5. Бонус за успешный финиш
             if not is_broken and pred_path[-1] == actual_end:
-                reward += 1.5  # Мы дошли!
-
-                # 6. Оптимальность
-                if current_cost == target_cost:
-                    reward += 2.0  # Идеально
-                elif current_cost > target_cost:
-                    # Плавный бонус за длину: чем ближе к идеалу, тем лучше
-                    reward += 1.0 * (target_cost / current_cost)
+                reward += 3.5  # Мы дошли! (Награда за выполнение задачи)
 
             # Штраф за циклы, чтобы не накручивали прогресс
             if len(pred_path) != len(set(pred_path)):

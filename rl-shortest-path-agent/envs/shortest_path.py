@@ -5,7 +5,7 @@ import numpy as np
 import networkx as nx
 from typing import Optional, List
 from envs.base_classes import Data, Env, Verifier
-from envs.prompts import generate_shortest_path_prompt, SYSTEM_PROMPT
+from envs.prompts import generate_path_prompt, SYSTEM_PROMPT
 import pickle
 from torch.utils.data import Dataset
 
@@ -17,7 +17,7 @@ class PathVerifier(Verifier):
         return match.group(1).strip() if match else ""
 
     def verify(self, data: Data, test_solution: str) -> bool:
-        """Проверяем, что путь существует и его стоимость равна минимальной"""
+        """Проверяем, что путь существует и ведет от старта к финишу"""
         pred_str = self.extract_answer(test_solution)
         if not pred_str:
             return False
@@ -29,19 +29,16 @@ class PathVerifier(Verifier):
             # Восстанавливаем граф из метаданных для проверки
             graph = nx.from_numpy_array(data.metadata["matrix"])
 
-            # Считаем стоимость предложенного пути
-            cost = 0
+            # Проверяем существование ребер
             for i in range(len(pred_path) - 1):
                 u, v = pred_path[i], pred_path[i + 1]
                 if not graph.has_edge(u, v):
                     return False  # LLM выдумала несуществующее ребро
-                cost += graph[u][v]["weight"]
 
-            # Проверяем, что начало/конец верные, и стоимость оптимальная
+            # Проверяем, что начало/конец верные
             is_valid_start_end = pred_path[0] == data.metadata["start"] and pred_path[-1] == data.metadata["end"]
-            is_optimal = cost == data.metadata["optimal_cost"]
 
-            return is_valid_start_end and is_optimal
+            return is_valid_start_end
         except Exception:
             return False  # Если LLM выдала мусор вместо чисел
 
@@ -89,7 +86,7 @@ class PathEnv(Env):
 
                     # Формируем матрицу и промпт
                     mat = nx.to_numpy_array(G, nonedge=0).astype(int)
-                    prompt = generate_shortest_path_prompt(mat, start, end)
+                    prompt = generate_path_prompt(mat, start, end)
 
                     # Эталонный ответ (просто для логов/сравнения)
                     ans_str = ", ".join(map(str, optimal_path))

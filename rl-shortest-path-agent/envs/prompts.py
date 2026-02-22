@@ -1,10 +1,9 @@
 import numpy as np
 
 
-def generate_shortest_path_prompt(adjacency_matrix: np.ndarray, start_node: int, end_node: int) -> str:
+def generate_path_prompt(adjacency_matrix: np.ndarray, start_node: int, end_node: int) -> str:
     """
-    Generates a comprehensive, LLM-friendly prompt for the Shortest Path problem,
-    forcing Chain-of-Thought reasoning.
+    Generates a comprehensive, LLM-friendly prompt for the Path Finding problem.
     """
     n_nodes = adjacency_matrix.shape[0]
 
@@ -27,21 +26,18 @@ def generate_shortest_path_prompt(adjacency_matrix: np.ndarray, start_node: int,
 
     # Формируем промпт с четкой инструкцией и примером CoT
     prompt = (
-        f"You are an expert at graph pathfinding. Find the shortest path from Node {start_node} to Node {end_node} in the weighted undirected graph below.\n\n"
+        f"You are an expert at graph pathfinding. Find a valid path from Node {start_node} to Node {end_node} in the graph below.\n\n"
         "Graph connections:\n"
         f"{graph_str}\n\n"
         "Instructions:\n"
-        "1. You MUST think step-by-step inside <reasoning> tags. Explore neighbors, track the cumulative costs from the start node, and keep track of the current shortest paths.\n"
-        "2. After your reasoning, output ONLY the final sequence of node indices for the shortest path, comma-separated, inside <answer> tags.\n\n"
+        "1. You MUST think step-by-step inside <reasoning> tags. Explore neighbors to find a route to the target.\n"
+        "2. After your reasoning, output ONLY the sequence of node indices for the path, comma-separated, inside <answer> tags.\n\n"
         "Example output format:\n"
         "<reasoning>\n"
         "Starting at Node A.\n"
         "Neighbors of Node A are Node B (weight 2) and Node C (weight 5).\n"
-        "Current paths:\n"
-        "- Path A->B: cost 2\n"
-        "- Path A->C: cost 5\n"
-        "Exploring from Node B (lowest current cost 2). Neighbors of Node B are Node D (weight 3). New path A->B->D: cost 2+3=5.\n"
-        "...and so on, tracking the lowest cumulative cost until reaching the target node.\n"
+        "Exploring from Node B. Neighbors of Node B are Node D (weight 3).\n"
+        "...and so on, until reaching the target node.\n"
         "</reasoning>\n"
         "<answer>A, B, D</answer>"
     )
@@ -50,8 +46,8 @@ def generate_shortest_path_prompt(adjacency_matrix: np.ndarray, start_node: int,
 
 
 SYSTEM_PROMPT = """
-You are a pathfinding expert. Find the shortest path between the given start and end nodes.
-First, explore the graph step-by-step and calculate path costs inside <reasoning> tags.
+You are a pathfinding expert. Find a valid path between the given start and end nodes.
+First, explore the graph step-by-step inside <reasoning> tags.
 Then, output ONLY the final sequence of node indices, comma-separated, inside <answer> tags.
 
 Respond in the following format:
