@@ -66,11 +66,13 @@ def correctness_reward_func(
             # 4. "Эвристический компас" (Награда за приближение к цели)
             if not is_broken:
                 try:
-                    # Считаем, сколько шагов осталось от последней точки до финиша
-                    dist_to_go = nx.shortest_path_length(G, source=last_valid_node, target=actual_end)
-                    max_dist = len(G.nodes)
-                    # Чем меньше dist_to_go, тем больше этот бонус (от 0 до 0.5)
-                    reward += 0.5 * (1.0 - (dist_to_go / max_dist))
+                    # Считаем прогресс относительно старта
+                    initial_dist = nx.shortest_path_length(G, source=actual_start, target=actual_end)
+                    current_dist = nx.shortest_path_length(G, source=last_valid_node, target=actual_end)
+
+                    # Даем награду только если мы реально приблизились к цели (progress > 0)
+                    if initial_dist > 0 and current_dist < initial_dist:
+                        reward += 0.5 * ((initial_dist - current_dist) / initial_dist)
                 except nx.NetworkXNoPath:
                     pass
 
