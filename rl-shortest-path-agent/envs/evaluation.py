@@ -135,8 +135,18 @@ def evaluate_agent(
 
         metrics["avg_reasoning_len"].append(len(reasoning))
 
+        # Метаданные
+        matrix = data.metadata["matrix"]
+        start_node = data.metadata["start"]
+        end_node = data.metadata["end"]
+        optimal_cost = data.metadata["optimal_cost"]
+        ideal_path_str = data.answer
+
         if not answer:
             metrics["format_error"] += 1
+            print(
+                f"\n[Eval] Start: {start_node} | End: {end_node} | Ideal: {ideal_path_str} | Agent: No Answer/Format Error"
+            )
             continue
 
         # Парсинг пути
@@ -145,38 +155,45 @@ def evaluate_agent(
             pred_path = [int(x.strip()) for x in clean_ans.split(",") if x.strip()]
         except ValueError:
             metrics["format_error"] += 1
+            print(f"\n[Eval] Start: {start_node} | End: {end_node} | Ideal: {ideal_path_str} | Agent: Parse Error")
             continue
 
         if not pred_path:
             metrics["format_error"] += 1
+            print(f"\n[Eval] Start: {start_node} | End: {end_node} | Ideal: {ideal_path_str} | Agent: Empty Path")
             continue
-
-        # Проверка пути
-        matrix = data.metadata["matrix"]
-        start_node = data.metadata["start"]
-        end_node = data.metadata["end"]
-        optimal_cost = data.metadata["optimal_cost"]
-
-        # Проверка старта и конца
-        if pred_path[0] != start_node or pred_path[-1] != end_node:
-            continue  # Путь не ведет от старта к финишу
 
         # Проверка ребер и расчет стоимости
         G = nx.from_numpy_array(matrix)
-        path_cost = 0
-        is_valid = True
+        current_cost = 0
+        is_broken = False
 
         for i in range(len(pred_path) - 1):
             u, v = pred_path[i], pred_path[i + 1]
             if G.has_edge(u, v):
-                path_cost += G[u][v]["weight"]
+                current_cost += G[u][v]["weight"]
             else:
-                is_valid = False
+                is_broken = True
                 break
 
-        if is_valid:
+        # Проверка старта и конца
+        is_correct_start = pred_path[0] == start_node
+        is_correct_end = pred_path[-1] == end_node
+
+        # Логирование
+        print(f"\n[Eval] Start: {start_node} | End: {end_node}")
+        print(f"  Ideal Path: {ideal_path_str} (Cost: {optimal_cost})")
+        print(f"  Agent Path: {pred_path}")
+        print(f"  Agent Cost: {current_cost if not is_broken else str(current_cost) + ' (Broken)'}")
+        print(f"  Exists in Graph: {not is_broken} | Reached End: {is_correct_end}")
+
+        # Обновление метрик
+        if not is_correct_start or not is_correct_end:
+            continue
+
+        if not is_broken:
             metrics["valid_path"] += 1
-            gap = path_cost - optimal_cost
+            gap = current_cost - optimal_cost
             metrics["avg_optimality_gap"].append(gap)
 
             if gap <= 0:
