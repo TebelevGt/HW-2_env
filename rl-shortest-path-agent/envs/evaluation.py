@@ -9,26 +9,6 @@ from envs.shortest_path import ShortestPathDataset
 from envs.prompts import SYSTEM_PROMPT
 
 
-# 1. Создаем обертку, которая принимает текст, генерирует ответ и возвращает текст
-class ModelWrapper:
-    def __init__(self, model, tokenizer):
-        self.model = model
-        self.tokenizer = tokenizer
-
-    def __call__(self, prompt: str) -> str:
-        # Токенизируем промпт
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
-
-        # Генерируем токены
-        outputs = self.model.generate(**inputs, max_new_tokens=512, temperature=0.0)
-
-        # Обрезаем сам промпт из ответа (чтобы осталась только генерация)
-        generated_tokens = outputs[0][inputs["input_ids"].shape[1] :]
-
-        # Декодируем в чистую строку
-        return self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
-
-
 def load_pickle(path: str):
     with open(path, "rb") as f:
         return pickle.load(f)
@@ -92,10 +72,10 @@ def evaluate_agent(
     def run_inference(prompt: str) -> str:
         # Адаптер для разных типов моделей
         try:
-            if callable(model):
-                return model(prompt)
-            elif hasattr(model, "generate_content"):  # Google GenAI style
+            if hasattr(model, "generate_content"):  # Google GenAI style
                 return model.generate_content(prompt).text
+            elif callable(model) and not isinstance(model, torch.nn.Module):
+                return model(prompt)
             elif hasattr(model, "predict"):  # Sklearn / Custom style
                 return model.predict(prompt)
             elif hasattr(model, "generate"):  # HuggingFace style (simplified wrapper)
