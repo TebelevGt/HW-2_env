@@ -112,6 +112,8 @@ def evaluate_agent(
     metrics = {
         "total": 0,
         "format_error": 0,
+        "hallucination_error": 0,
+        "wrong_start_end_error": 0,
         "valid_path": 0,
         "optimal_count": 0,
         "avg_optimality_gap": [],
@@ -188,10 +190,11 @@ def evaluate_agent(
         print(f"  Exists in Graph: {not is_broken} | Reached End: {is_correct_end}")
 
         # Обновление метрик
-        if not is_correct_start or not is_correct_end:
-            continue
-
-        if not is_broken:
+        if is_broken:
+            metrics["hallucination_error"] += 1
+        elif not is_correct_start or not is_correct_end:
+            metrics["wrong_start_end_error"] += 1
+        else:
             metrics["valid_path"] += 1
             gap = current_cost - optimal_cost
             metrics["avg_optimality_gap"].append(gap)
@@ -207,6 +210,8 @@ def evaluate_agent(
     results = {
         "accuracy": metrics["valid_path"] / total,
         "format_compliance": 1.0 - (metrics["format_error"] / total),
+        "hallucination_rate": metrics["hallucination_error"] / total,
+        "wrong_endpoint_rate": metrics["wrong_start_end_error"] / total,
         "optimal_rate": metrics["optimal_count"] / total,
         "avg_optimality_gap": (
             float(np.mean(metrics["avg_optimality_gap"])) if metrics["avg_optimality_gap"] else 0.0
