@@ -71,7 +71,7 @@ def correctness_reward_func(
             # 5. Бонус за успешный финиш
             if not is_broken and pred_path[-1] == actual_end:
                 reward += 3.5  # Мы дошли! (Награда за выполнение задачи)
-                print(f"SUCCESS: Start: {actual_start} | End: {actual_end} | Path: {pred_path} | Valid: True")
+                # print(f"SUCCESS: Start: {actual_start} | End: {actual_end} | Path: {pred_path} | Valid: True")
 
             # Штраф за циклы, чтобы не накручивали прогресс
             if len(pred_path) != len(set(pred_path)):
@@ -84,9 +84,10 @@ def correctness_reward_func(
 
     # Печать для отладки
     if extracted_responses and len(answer) > 0:
-        print(
-            f"Target: {answer[0]} | Start: {start[0]} | End: {end[0]} | Response: {extracted_responses[0]} | Reward: {rewards[0]:.3f}"
-        )
+        pass
+        # print(
+        #     f"Target: {answer[0]} | Start: {start[0]} | End: {end[0]} | Response: {extracted_responses[0]} | Reward: {rewards[0]:.3f}"
+        # )
 
     return rewards
 

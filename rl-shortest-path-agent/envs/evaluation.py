@@ -8,8 +8,6 @@ from typing import Union, Dict, Any
 from envs.shortest_path import ShortestPathDataset
 from envs.prompts import SYSTEM_PROMPT
 
-import torch
-
 
 # 1. Создаем обертку, которая принимает текст, генерирует ответ и возвращает текст
 class ModelWrapper:
