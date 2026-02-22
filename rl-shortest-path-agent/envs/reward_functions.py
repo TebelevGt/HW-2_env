@@ -4,7 +4,6 @@ import numpy as np
 
 
 def extract_xml_answer(text: str) -> str:
-    """Извлекает содержимое тега <answer>"""
     match = re.search(r"<answer>(.*?)</answer>", text, re.DOTALL)
     if match:
         return match.group(1).strip()
@@ -14,10 +13,6 @@ def extract_xml_answer(text: str) -> str:
 def correctness_reward_func(
     prompts, completions, answer, matrix, start, end, optimal_cost, **kwargs
 ) -> list[float]:
-    """
-    Улучшенная функция награды: плотные стимулы (Dense Rewards)
-    и жесткие штрафы за галлюцинации.
-    """
     responses = [comp[0]["content"] if isinstance(comp, list) else comp for comp in completions]
     extracted_responses = [extract_xml_answer(r) for r in responses]
     rewards = []
@@ -25,12 +20,13 @@ def correctness_reward_func(
     for i in range(len(responses)):
         pred_str = extracted_responses[i]
         adj = np.array(matrix[i])
+        G = nx.from_numpy_array(adj)
         actual_start, actual_end, target_cost = start[i], end[i], optimal_cost[i]
 
         reward = 0.0
 
         try:
-            # 1. Парсинг и базовая проверка формата
+            # Очистка и парсинг
             clean_str = re.sub(r"[^\d,]", "", pred_str)
             pred_path = [int(x.strip()) for x in clean_str.split(",") if x.strip()]
 
@@ -38,118 +34,98 @@ def correctness_reward_func(
                 rewards.append(0.0)
                 continue
 
-            # Награда за соблюдение структуры (числа через запятую)
+            # 1. Базовый формат
             reward += 0.1
 
-            # 2. Проверка на циклы (очень важно для графов)
-            if len(pred_path) != len(set(pred_path)):
-                reward -= 0.4  # Штраф за петли
+            # 2. Старт должен быть верным (обязательно)
+            if pred_path[0] != actual_start:
+                rewards.append(0.0)  # Если старт не тот, дальше не смотрим
+                continue
+            reward += 0.2
 
-            # 3. Проверка старта и финиша
-            if pred_path[0] == actual_start:
-                reward += 0.2
-            if pred_path[-1] == actual_end:
-                reward += 0.2
-
-            # 4. Проверка валидности ребер (Галлюцинации)
-            valid_steps = 0
+            # 3. Проверка связности и накопление стоимости
             current_cost = 0
-            hallucinated_edges = 0
+            is_broken = False
+            last_valid_node = actual_start
 
             for j in range(len(pred_path) - 1):
                 u, v = pred_path[j], pred_path[j + 1]
-                # Проверяем, что узлы в границах и ребро существует
-                if u < len(adj) and v < len(adj) and adj[u][v] > 0:
-                    valid_steps += 1
-                    current_cost += adj[u][v]
+                if G.has_edge(u, v):
+                    current_cost += G[u][v]["weight"]
+                    last_valid_node = v
                 else:
-                    hallucinated_edges += 1
+                    is_broken = True
+                    break  # Путь прерван галлюцинацией
 
-            # Если модель выдумала путь — сильно режем награду
-            if hallucinated_edges > 0:
-                reward -= 0.5 * hallucinated_edges
-            elif len(pred_path) > 1:
-                # Награда за связность (какую часть пути модель прошла честно)
-                connectivity_ratio = valid_steps / (len(pred_path) - 1)
-                reward += 0.5 * connectivity_ratio
+            # 4. "Эвристический компас" (Награда за приближение к цели)
+            if not is_broken:
+                try:
+                    # Считаем, сколько шагов осталось от последней точки до финиша
+                    dist_to_go = nx.shortest_path_length(G, source=last_valid_node, target=actual_end)
+                    max_dist = len(G.nodes)
+                    # Чем меньше dist_to_go, тем больше этот бонус (от 0 до 0.5)
+                    reward += 0.5 * (1.0 - (dist_to_go / max_dist))
+                except nx.NetworkXNoPath:
+                    pass
 
-            # 5. Награда за достижение цели и оптимальность
-            is_complete_valid_path = (
-                hallucinated_edges == 0 and pred_path[0] == actual_start and pred_path[-1] == actual_end
-            )
+            # 5. Бонус за успешный финиш
+            if not is_broken and pred_path[-1] == actual_end:
+                reward += 1.5  # Мы дошли!
 
-            if is_complete_valid_path:
-                reward += 1.0  # Базовая награда за найденный путь
-
+                # 6. Оптимальность
                 if current_cost == target_cost:
-                    reward += 2.0  # Бинго! Кратчайший путь
-                else:
-                    # Плавная награда: чем ближе к идеалу, тем лучше
-                    # Используем возведение в квадрат для "заострения" градиента
-                    optimality_ratio = target_cost / current_cost
-                    reward += 1.0 * (optimality_ratio**2)
+                    reward += 2.0  # Идеально
+                elif current_cost > target_cost:
+                    # Плавный бонус за длину: чем ближе к идеалу, тем лучше
+                    reward += 1.0 * (target_cost / current_cost)
+
+            # Штраф за циклы, чтобы не накручивали прогресс
+            if len(pred_path) != len(set(pred_path)):
+                reward *= 0.5
 
         except Exception:
             reward = 0.0
 
-        # Награда не должна быть отрицательной для стабильности RL
         rewards.append(max(0.0, reward))
 
-    # Лог для первой реплики в батче
-    print(
-        f"Path: {extracted_responses[0]} | Target: {target_cost} | Real: {current_cost if 'current_cost' in locals() else 'N/A'} | Reward: {rewards[0]:.3f}"
-    )
+    # Печать для отладки
+    if extracted_responses:
+        print(f"Path: {extracted_responses[0]} | EndNode: {actual_end} | Reward: {rewards[0]:.3f}")
+
     return rewards
 
 
-def reasoning_quality_reward_func(completions, matrix, **kwargs) -> list[float]:
+def reasoning_length_reward_func(completions, **kwargs) -> list[float]:
     """
-    Проверяет, что модель в рассуждениях упоминает веса из матрицы.
-    Это мешает модели писать "бессвязный" CoT.
+    Награда за 'глубину размышлений'.
+    Если модель пишет мало в <reasoning>, она скорее всего халтурит.
     """
     responses = [comp[0]["content"] if isinstance(comp, list) else comp for comp in completions]
     rewards = []
-
-    for i, text in enumerate(responses):
-        reasoning_part = re.search(r"<reasoning>(.*?)</reasoning>", text, re.DOTALL)
-        if not reasoning_part:
+    for r in responses:
+        reasoning = re.search(r"<reasoning>(.*?)</reasoning>", r, re.DOTALL)
+        if reasoning:
+            content = reasoning.group(1).strip()
+            # Даем до 0.5 баллов за подробные рассуждения (более 300 символов)
+            score = min(0.5, len(content) / 600)
+            rewards.append(score)
+        else:
             rewards.append(0.0)
-            continue
-
-        reasoning_text = reasoning_part.group(1)
-        adj = np.array(matrix[i])
-
-        # Получаем все уникальные веса из текущего графа
-        true_weights = set(adj[adj > 0].flatten().astype(int).astype(str))
-        # Ищем все числа в тексте рассуждений
-        found_numbers = set(re.findall(r"\d+", reasoning_text))
-
-        if not true_weights:
-            rewards.append(0.0)
-            continue
-
-        # Считаем пересечение: сколько реальных весов упомянуто
-        matches = true_weights.intersection(found_numbers)
-        coverage = len(matches) / min(len(true_weights), 5)  # Нам достаточно 5 упоминаний
-
-        rewards.append(min(0.5, coverage * 0.5))
-
     return rewards
 
 
 def format_reward_func(completions, **kwargs) -> list[float]:
-    """Проверка строгого соответствия XML формату"""
+    """Проверка XML и отсутствия лишнего мусора после </answer>"""
     responses = [comp[0]["content"] if isinstance(comp, list) else comp for comp in completions]
     rewards = []
-
-    # Регулярка для проверки наличия обоих тегов
-    pattern = r"<reasoning>.*?</reasoning>\s*<answer>.*?</answer>"
-
     for r in responses:
         score = 0.0
-        if re.search(pattern, r, re.DOTALL):
-            score += 0.3
-        if r.startswith("<reasoning>") and "</answer>" in r:
+        if "<reasoning>" in r and "</reasoning>" in r:
+            score += 0.15
+        if "<answer>" in r and "</answer>" in r:
+            score += 0.15
+        # Штраф за текст после закрывающего тега (модель любит болтать)
+        if r.strip().endswith("</answer>"):
             score += 0.2
         rewards.append(score)
     return rewards
