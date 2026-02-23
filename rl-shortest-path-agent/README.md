@@ -18,10 +18,11 @@
 В /notebooks забираем тетрадку training_model.ipynb
 
 - Для обучения на обычном дата сете использовать: data/train_v1.pkl
-- Для обучения на курикулум дата сете использовать: data/train_curriculum.pkl
-  
+- Для обучения на курикулум дата сете использовать: data/train_curriculum.pkl  
+**Я обучался в kaggle**  
+
 # 3. Измерение качества модели
-В /notebooks забираем тетрадку training_model.ipynb и запускаем все ячейки. Я обучался в kaggle
+В /notebooks забираем тетрадку eval-model.ipynb и запускаем все ячейки. Я валидировался в kaggle
 
 # 4. Отчет: Оптимизация агентных способностей Qwen 2.5 (1.5B) с помощью GRPO и Curriculum Learning
 
