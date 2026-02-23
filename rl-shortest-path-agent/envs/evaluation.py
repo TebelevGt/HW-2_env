@@ -14,6 +14,7 @@ def extract_xml_tag(text: str, tag: str) -> str:
 
 
 def evaluate_agent(model, tokenizer, dataset, device="cuda", batch_size=8, generate_kwargs=None):
+    """Функция для оценки качества обученной модели model на выбранном датасете dataset"""
     if isinstance(dataset, str):
         dataset = ShortestPathDataset.load(dataset)
 

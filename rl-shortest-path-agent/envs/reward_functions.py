@@ -13,6 +13,7 @@ def extract_xml_answer(text: str) -> str:
 def correctness_reward_func(
     prompts, completions, answer, matrix, start, end, optimal_cost, **kwargs
 ) -> list[float]:
+    """Самая главная функция награды. Вся политика обхода графа тут"""
     responses = [comp[0]["content"] if isinstance(comp, list) else comp for comp in completions]
     extracted_responses = [extract_xml_answer(r) for r in responses]
     rewards = []
