@@ -67,4 +67,4 @@
 
 **Итог:** Для малогабаритных моделей (1.5B), решающих сложные агентные задачи, применение GRPO *в чистом виде* деструктивно. Использование Curriculum Learning является необходимым условием для успешного Alignment-процесса и защиты от Reward Hacking.
 
-![alt text](metrics_visualization.png)
+![alt text](results/metrics_visualization.png)
