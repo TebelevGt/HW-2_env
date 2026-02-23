@@ -10,8 +10,8 @@
 ```pip install -r requirements.txt```
 
 - Генерируем дата сет для обучения  
-Переходим в корень проекта и генерируем дата сеты для обучения
-```python envs/generate_dataset.py```
+Переходим в корень проекта и генерируем дата сеты для обучения  
+```python envs/generate_dataset.py```  
 ```python envs/generate_curriculum_dataset.py```
 
 # 2. Обучение модели
