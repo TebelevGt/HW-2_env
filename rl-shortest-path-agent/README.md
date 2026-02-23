@@ -18,7 +18,7 @@
 В /notebooks забираем тетрадку training_model.ipynb
 
 - Для обучения на обычном дата сете использовать: data/train_v1.pkl
-- Для обучения на обычном дата сете использовать: data/train_curriculum.pkl
+- Для обучения на курикулум дата сете использовать: data/train_curriculum.pkl
   
 # 3. Измерение качества модели
 В /notebooks забираем тетрадку training_model.ipynb и запускаем все ячейки
