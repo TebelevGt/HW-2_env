@@ -17,7 +17,7 @@ def main():
         {"difficulty": (8, 12), "ratio": 0.3},
     ]
 
-    total_samples = 2000
+    total_samples = 500
     output_path = "data/train_curriculum.pkl"
 
     print(f"Generating Curriculum Dataset ({total_samples} samples)...")
