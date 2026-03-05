@@ -1,5 +1,0 @@
-numpy
-networkx
-torch
-matplotlib
-tqdm
